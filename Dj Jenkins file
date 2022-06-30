@@ -1,41 +1,50 @@
-node("")
-{
-  def MHD = tool name: "Maven 3.8.4"
-  stage ("1.Initialtion"){
-    sh "echo Start of barclay application build"
+pipeline{
+  agent any
+  tools{
+    maven "Maven 3.8.4"
   }
-stage ("2.GitClone"){
-  sh "echo start git clone"
-  git "https://github.com/Wizean/web-app.git"
-}
-stage ("3.Build"){
-  sh "echo build the application with maven"
-  sh "${MHD}/bin/mvn package"
-}
-stage ("4.CodeQuality"){
-  sh "echo performing code test with sonarqube"
-  sh "${MHD}/bin/mvn sonar:sonar"
-}
-stage ("5.Artifactory"){
-  sh "echo Backup to Nexus"
- // sh "${MHD}/bin/mvn deploy"
-}
-stage ("6.DeploytoUAT"){
-  sh "echo deploying to application server"
-  deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://52.12.241.238:8080/')], contextPath: null, war: 'target/*.war'
-}
-stage ("7.Approval"){
-  sh "echo Approval Needed"
-  timeout(time:5, unit:'DAYS'){
-    input message: 'Approval for Production'
+  stages{
+    stage("1.CodeClone"){
+      steps{
+        git credentialsId: 'Github-Cred', url: 'https://github.com/Wizean/web-app.git'
+      }
+    }
+    stage("2.Build"){
+      steps{
+        sh "mvn clean package"
+      }
+    }
+    stage("3.CodeQuality"){
+      steps{
+        sh "mvn sonar:sonar"
+      }
+    }
+    stage("4.Artifacts"){
+      steps{
+        sh "mvn deploy"
+      }
+    }
+    stage("5.DeploytoUAT"){
+      steps{
+        deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://52.12.241.238:8080/')], contextPath: null, war: 'target/*.war'
+      }
+    }
+    stage("6.Approval"){
+      steps{
+        timeout(time:5, unit:'DAYS'){
+        input message: 'Approval for Production'
+      }
+    }
   }
-}
-stage ("8.DeploytoPROD"){
-  sh "echo deploying to application server"
-  deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://52.12.241.238:8080/')], contextPath: null, war: 'target/*.war'
-}
-stage ("9.EmailNotification"){
-  sh "echo send email notification to Devops team"
-  emailext body: 'This build was successful', subject: 'Build Success', to: 'devops'
-}
+    stage("7.deploytoPROD"){
+      steps{
+        deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://52.12.241.238:8080/')], contextPath: null, war: 'target/*.war'
+      }
+    }
+    stage("8.EmailNotification"){
+      steps{
+        emailext body: 'This build was successful', subject: 'Build Success', to: 'devops'
+      }
+    }
+  }
 }
