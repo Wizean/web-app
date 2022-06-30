@@ -20,8 +20,8 @@ pipeline{
       }
     }
     stage("4.Artifacts"){
-      steps{
-        //sh "mvn deploy"
+      //steps{
+        sh "mvn deploy"
       }
     }
     stage("5.DeploytoUAT"){
