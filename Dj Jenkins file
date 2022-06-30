@@ -20,7 +20,7 @@ pipeline{
       }
     }
     stage("4.Artifacts"){
-      //steps{
+      steps{
         sh "mvn deploy"
       }
     }
